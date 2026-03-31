@@ -1,9 +1,9 @@
 const cacheName = "Unity-Tele-runner-1.0";
 const contentToCache = [
     "Build/Build.loader.js",
-    "Build/Build.framework.js.unityweb",
-    "Build/Build.data.unityweb",
-    "Build/Build.wasm.unityweb",
+    "Build/Build.framework.js.br",
+    "Build/Build.data.br",
+    "Build/Build.wasm.br",
     "TemplateData/style.css"
 
 ];
