@@ -1,7 +1,13 @@
 {
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/Build/$1"
+    }
+  ],
   "headers": [
     {
-      "source": "/Build/(.*)\\.wasm\\.unityweb",
+      "source": "/(.*)\\.wasm\\.unityweb",
       "headers": [
         {
           "key": "Content-Encoding",
@@ -14,7 +20,7 @@
       ]
     },
     {
-      "source": "/Build/(.*)\\.data\\.unityweb",
+      "source": "/(.*)\\.data\\.unityweb",
       "headers": [
         {
           "key": "Content-Encoding",
@@ -27,7 +33,7 @@
       ]
     },
     {
-      "source": "/Build/(.*)\\.js\\.unityweb",
+      "source": "/(.*)\\.js\\.unityweb",
       "headers": [
         {
           "key": "Content-Encoding",
