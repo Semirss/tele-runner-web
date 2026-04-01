@@ -1,0 +1,31 @@
+{
+  "headers": [
+    {
+      "source": "/Build/(.*\\.framework\\.js\\.unityweb)",
+      "headers": [
+        { "key": "Content-Encoding", "value": "br" },
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
+    },
+    {
+      "source": "/Build/(.*\\.wasm\\.unityweb)",
+      "headers": [
+        { "key": "Content-Encoding", "value": "br" },
+        { "key": "Content-Type", "value": "application/wasm" }
+      ]
+    },
+    {
+      "source": "/Build/(.*\\.data\\.unityweb)",
+      "headers": [
+        { "key": "Content-Encoding", "value": "br" },
+        { "key": "Content-Type", "value": "application/octet-stream" }
+      ]
+    },
+    {
+      "source": "/Build/(.*\\.loader\\.js)",
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
+    }
+  ]
+}
