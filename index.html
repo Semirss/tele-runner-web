@@ -7,15 +7,123 @@
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <link rel="manifest" href="manifest.webmanifest">
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+
+      #intro-screen {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(135deg, #1f1c2c 0%, #928DAB 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        font-family: 'Outfit', sans-serif;
+        color: white;
+        transition: opacity 0.5s ease;
+      }
+      .intro-content {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        padding: 50px 70px;
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        text-align: center;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        animation: slideIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) both;
+      }
+      @keyframes slideIn {
+        0% { transform: translateY(30px); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+      }
+      .intro-content h1 {
+        margin: 0 0 10px 0;
+        font-size: 3.5rem;
+        font-weight: 800;
+        background: linear-gradient(to right, #00f2fe 0%, #4facfe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .game-description {
+        margin: 0 0 30px 0;
+        font-size: 1.2rem;
+        color: rgba(255,255,255,0.85);
+      }
+      .download-info {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(0,0,0,0.4);
+        padding: 12px 24px;
+        border-radius: 50px;
+        margin-bottom: 30px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        gap: 12px;
+      }
+      .pulse-icon {
+        width: 12px;
+        height: 12px;
+        background-color: #4facfe;
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
+      }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(79, 172, 254, 0.7); }
+        70% { box-shadow: 0 0 0 12px rgba(79, 172, 254, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(79, 172, 254, 0); }
+      }
+      #play-button {
+        background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+        border: none;
+        padding: 16px 45px;
+        border-radius: 50px;
+        color: white;
+        font-size: 1.3rem;
+        font-weight: 800;
+        font-family: inherit;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+        box-shadow: 0 10px 20px rgba(0,180,255,0.3);
+      }
+      #play-button:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 25px rgba(0,180,255,0.45);
+      }
+      #play-button:active:not(:disabled) {
+        transform: translateY(1px);
+        box-shadow: 0 5px 15px rgba(0,180,255,0.3);
+      }
+      #play-button:disabled {
+        background: gray;
+        box-shadow: none;
+        cursor: not-allowed;
+        filter: grayscale(100%);
+        opacity: 0.7;
+      }
+    </style>
   </head>
   <body>
     <div id="unity-container">
+      <div id="intro-screen">
+        <div class="intro-content">
+          <h1>Tele Runner</h1>
+          <p class="game-description">Ready for an epic runner adventure?</p>
+          <div class="download-info" id="download-info">
+            <span class="pulse-icon"></span>
+            <span id="download-size-text">Calculating size...</span>
+          </div>
+          <br>
+          <button id="play-button" disabled>Initializing...</button>
+        </div>
+      </div>
       <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
       <div id="unity-loading-bar">
         <div id="unity-logo"></div>
         <div id="unity-progress-bar-empty">
           <div id="unity-progress-bar-full"></div>
         </div>
+        <div id="unity-progress-text" style="color: white; text-align: center; margin-top: 10px; font-family: 'Outfit', sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); font-weight: 600;">0.0 / 0.0 MB</div>
       </div>
       <div id="unity-warning"> </div>
     </div>
@@ -92,20 +200,72 @@
       }
 
 
-      loadingBar.style.display = "block";
+      var introScreen = document.getElementById("intro-screen");
+      var playButton = document.getElementById("play-button");
+      var downloadSizeText = document.getElementById("download-size-text");
 
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-        }).then((unityInstance) => {
-          loadingBar.style.display = "none";
-        }).catch((message) => {
-          alert(message);
-        });
+      var fallbackSizes = {
+        data: 41172995,
+        framework: 79880,
+        wasm: 9807289
       };
-      document.body.appendChild(script);
+
+      async function fetchSize(url) {
+        try {
+          var response = await fetch(url, { method: 'HEAD' });
+          if(response.ok && response.headers.has('content-length')) {
+            return parseInt(response.headers.get('content-length'), 10);
+          }
+        } catch(e) { }
+        return null;
+      }
+
+      async function initIntro() {
+        var sizes = await Promise.all([
+          fetchSize(config.dataUrl),
+          fetchSize(config.frameworkUrl),
+          fetchSize(config.codeUrl)
+        ]);
+        
+        var totalBytes = (sizes[0] || fallbackSizes.data) + 
+                         (sizes[1] || fallbackSizes.framework) + 
+                         (sizes[2] || fallbackSizes.wasm);
+        
+        var totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
+        downloadSizeText.innerText = "Download size: ~" + totalMB + " MB";
+        
+        playButton.disabled = false;
+        playButton.innerText = "Play Now";
+        
+        playButton.addEventListener("click", function() {
+          introScreen.style.opacity = '0';
+          setTimeout(function() {
+            introScreen.style.display = 'none';
+            loadingBar.style.display = "block";
+            
+            var progressText = document.getElementById("unity-progress-text");
+            if (progressText) progressText.innerText = "0.0 / ~" + totalMB + " MB";
+            
+            var script = document.createElement("script");
+            script.src = loaderUrl;
+            script.onload = () => {
+              createUnityInstance(canvas, config, (progress) => {
+                progressBarFull.style.width = 100 * progress + "%";
+                if(progressText) {
+                  progressText.innerText = (progress * totalMB).toFixed(1) + " / ~" + totalMB + " MB";
+                }
+              }).then((unityInstance) => {
+                loadingBar.style.display = "none";
+              }).catch((message) => {
+                alert(message);
+              });
+            };
+            document.body.appendChild(script);
+          }, 500); // Wait for fade out
+        });
+      }
+      
+      initIntro();
     </script>
   </body>
 </html>
